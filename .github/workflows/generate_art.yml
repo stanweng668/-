@@ -20,21 +20,27 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{
               "model": "minimax-01-ablo",
-              "prompt": "养生主题封面，浅米色背景，上面写着\"身上的病居然莫名其妙就好了\"和\"接好运\"，中国风，简约设计，温暖色调，健康养生风格，清晰文字，8k，超高清",
+              "prompt": "养生主题封面，浅米色背景，上面写着身上的病居然莫名其妙就好了和接好运，中国风，简约设计，温暖色调，健康养生风格",
               "num_images": 1,
               "width": 1024,
               "height": 1024
             }' \
             -o response.json
 
-          # Extract image URL from response
-          IMAGE_URL=$(cat response.json | grep -o '"url":"[^"]*"' | cut -d'"' -f4)
+          cat response.json
+          echo "---"
+
+          # Try to extract image URL
+          IMAGE_URL=$(cat response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',[{}])[0].get('url',''))" 2>/dev/null)
           echo "Image URL: $IMAGE_URL"
 
-          # Download image
-          curl -L "$IMAGE_URL" -o cloud_art.png
-
-          ls -la cloud_art.png
+          if [ -n "$IMAGE_URL" ]; then
+            curl -L "$IMAGE_URL" -o cloud_art.png
+            ls -la cloud_art.png
+          else
+            echo "Failed to get image URL"
+            cat response.json
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
